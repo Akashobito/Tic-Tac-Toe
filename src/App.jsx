@@ -9,6 +9,7 @@ let intervalCode;
 function App() {
   const [yourMove, setYourMove] = useState("x");
   const [aiMove, setAiMove] = useState("o");
+  const [pvp, setPvp] = useState(true);
   const [clickCount, setClickCount] = useState([
     [0, 0, 0],
     [0, 0, 0],
@@ -70,13 +71,17 @@ function App() {
       setArray([...array]);
       // xoIcon.classList.add(`fa-${array[first][second]}`);
       // xoIcon.classList.remove("fa-o");
-      // setYourMove("x");
+      if(pvp){
+        setYourMove("o");
+      }
     } else {
       array[first][second] = "o";
       setArray([...array]);
       // xoIcon.classList.remove("fa-x");
       // xoIcon.classList.add("fa-o");
-      // setYourMove("x");
+      if(pvp){
+        setYourMove("x");
+      }
     }
   };
 
@@ -110,28 +115,34 @@ function App() {
   };
 
   useEffect(() => {
-    let intervalCode;
-    const findOMove = () => {
-      const { first } = handleCPUMove();
-      const { second } = handleCPUMove();
-      if (array[first][second] != "x" && array[first][second] != "o") {
-        array[first][second] = aiMove;
-        clickCount[first][second] = 1;
-        setClickCount([...clickCount]);
-        setArray([...array]);
-      } else {
-        findOMove();
+    const PcMove = () => {
+      let intervalCode;
+      const findOMove = () => {
+        const { first } = handleCPUMove();
+        const { second } = handleCPUMove();
+        if (array[first][second] != "x" && array[first][second] != "o") {
+          array[first][second] = aiMove;
+          clickCount[first][second] = 1;
+          setClickCount([...clickCount]);
+          setArray([...array]);
+        } else {
+          findOMove();
+        }
+      };
+      if (moveCount > 0 && moveCount < 5) {
+        intervalCode = setTimeout(() => {
+          findOMove();
+        }, 300);
       }
-    };
-    if (moveCount > 0 && moveCount < 5) {
-      intervalCode = setTimeout(() => {
-        findOMove();
-      }, 300);
-    }
 
-    return () => {
-      clearInterval(intervalCode);
+      return () => {
+        clearInterval(intervalCode);
+      };
     };
+
+    if(!pvp){
+      PcMove();
+    }
   }, [moveCount]);
 
   const handleReset = () => {
@@ -149,10 +160,15 @@ function App() {
     ]);
     setMoveCount(0);
     // setYourMove(yourMove)
+    if(pvp && !swap){
+      setYourMove('x')
+    }else if(pvp && swap){
+      setYourMove('o')
+    }
   };
 
   useEffect(() => {
-    if (moveCount >= 2) {
+    if (moveCount >= 2 && !pvp) {
       clearInterval(intervalCode); //to terminate the interval
       const result = checkWin(array, moveCount);
       // console.log(result);
@@ -194,7 +210,56 @@ function App() {
         ]);
         setResult("Draw");
         setMoveCount(0);
-        setYourMove("x");
+        // setYourMove("x");
+        intervalCode = setTimeout(() => {
+          setIsEnd(true);
+        }, 200);
+      }
+    }else if(moveCount >=2 && pvp){
+      clearInterval(intervalCode); //to terminate the interval for setInterval in setEnd
+      const result = checkWin(array, moveCount,pvp);
+      // console.log(result);
+      if (result === "x win") {
+        setClickCount([
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0],
+        ]);
+        
+        if(pvp && !swap){
+          setResult("Player 1 Wins")
+        } else if(pvp && swap){
+          setResult('Player 2 Wins')
+        }
+        setMoveCount(0);
+        intervalCode = setTimeout(() => {
+          setIsEnd(true);
+        }, 200);
+      } else if (result === "o win") {
+        setClickCount([
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0],
+        ]);
+        
+        if(pvp && !swap){
+          setResult("Player 2 wins")
+        } else if(pvp && swap){
+          setResult("Player 1 Wins")
+        }
+        setMoveCount(0);
+        intervalCode = setTimeout(() => {
+          setIsEnd(true);
+        }, 200);
+      } else if (result === "draw") {
+        setClickCount([
+          [0, 0, 0],
+          [0, 0, 0],
+          [0, 0, 0],
+        ]);
+        setResult("Draw");
+        setMoveCount(0);
+        // setYourMove("x");
         intervalCode = setTimeout(() => {
           setIsEnd(true);
         }, 200);
@@ -288,8 +353,8 @@ function App() {
               y: -100,
               transition: {
                 duration: 0.5,
-                type: 'spring'
-              }
+                type: "spring",
+              },
             }}
             className="absolute w-full top-10 flex justify-center items-center"
           >
@@ -304,9 +369,25 @@ function App() {
         <p className="text-black font-Roboto text-3xl font-semibold mb-10">
           TIC-TAC-TOE
         </p>
-        <div className="flex space-x-10 mb-8">
+        <div
+          className="cursor-pointer"
+          onClick={() => {
+            setPvp(!pvp);
+          }}
+        >
+          {!pvp ?<div className="border-2 font-Roboto font-semibold px-5 py-1 rounded-sm">
+            <i  className="fa-solid fa-user mr-1"></i> Vs 
+            <i  className="fa-solid fa-user ml-2 "></i>
+          </div> 
+          : 
+          <div className="border-2 font-Roboto font-semibold px-5 py-1 rounded-sm">
+            <i  className="fa-solid fa-user mr-1"></i> Vs 
+            <i  className="fa-solid fa-robot ml-2"></i>
+          </div>}
+        </div>
+        <div className="flex space-x-10 mb-8 mt-8">
           <p className="border-2 text-black font-Roboto font-semibold mt-3 px-5 py-1 rounded-sm cursor-pointer">
-            You :{" "}
+           {pvp?  (<i className="fa-solid fa-user mr-4"><span className="ml-0.5 text-lg font-medium font-Roboto">1</span></i>) : (<i className="fa-solid fa-user mr-1"></i>) }
             <span className={!swap ? "text-red-400" : "text-green-500"}>
               {swap ? "O" : "X"}
             </span>
@@ -327,7 +408,7 @@ function App() {
             ></motion.i>
           </div>
           <p className="border-2 text-black font-Roboto font-semibold mt-3 px-5 py-1 rounded-sm cursor-pointer">
-            PC :{" "}
+            {pvp? (<i className="fa-solid fa-user mr-4 "><span className="ml-0.5 text-lg font-medium font-Roboto text-black">2</span></i>):  <i  className="fa-solid fa-robot ml-2 mr-2"></i> }
             <span className={swap ? "text-red-400" : "text-green-500"}>
               {swap ? "X" : "O"}
             </span>

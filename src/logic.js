@@ -4,7 +4,7 @@
 //   ["o", "", "x"],
 // ];
 
-export function checkWin(array,moveCount) {
+export function checkWin(array,moveCount,pvp) {
   let horizontal = [];
   let vertical = [];
   let xway = [];
@@ -66,7 +66,11 @@ export function checkWin(array,moveCount) {
         }
       }
     }
-    return moveCount >=5? "draw": '';
+    if(!pvp){
+      return moveCount >=5? "draw": '';
+    }else{
+      return moveCount >=9? 'draw': '';
+    }
   }
   const result = findWin();
   return result
